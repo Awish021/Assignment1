@@ -6,13 +6,16 @@
 #include "defs.h"
 #include "x86.h"
 #include "elf.h"
+#include "quit.h"
+
+
 
 int
 exec(char *path, char **argv)
 {
   char *s, *last;
   int i, off;
-  uint argc, sz, sp, ustack[3+MAXARG+1];
+  uint argc, sz, sp, ustack[3+MAXARG+1] /*qstack[90]*/;
   struct elfhdr elf;
   struct inode *ip;
   struct proghdr ph;
@@ -60,6 +63,8 @@ exec(char *path, char **argv)
     goto bad;
   clearpteu(pgdir, (char*)(sz - 2*PGSIZE));
   sp = sz;
+  copyout(pgdir, sp, (void*)quit,10);
+
 
   // Push argument strings, prepare rest of stack in ustack.
   for(argc = 0; argv[argc]; argc++) {
@@ -70,11 +75,21 @@ exec(char *path, char **argv)
       goto bad;
     ustack[3+argc] = sp;
   }
+
+  /*void *q=(void*)quit;
+  if(copyout(pgdir, (uint)&qstack, q, 16) < 0)
+      goto bad;*/
+  uint temp;
+  temp=sp;
+  sp=sp-12;
+  if(copyout(pgdir, sp, (void*)quit, 10) < 0)
+      goto bad;
   ustack[3+argc] = 0;
 
-  ustack[0] = 0xffffffff;  // fake return PC
+  ustack[0] = sp/*(uint)&qstack*/;  // fake return PC
+  sp=temp;
   ustack[1] = argc;
-  ustack[2] = sp - (argc+1)*4;  // argv pointer
+  ustack[2] = sp - ((argc+1)*4)-12;  // argv pointer
 
   sp -= (3+argc+1) * 4;
   if(copyout(pgdir, sp, ustack, (3+argc+1)*4) < 0)
