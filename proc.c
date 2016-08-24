@@ -19,6 +19,20 @@ extern void forkret(void);
 extern void trapret(void);
 
 static void wakeup1(void *chan);
+static int policy=1;
+
+
+/*The random mechanism*/
+static const int A = 15342; 
+static const int C = 45194; 
+static int prev = 0; 
+int rand(int max_num)
+{
+    if(max_num!=0){
+      prev = (prev * A + C ) % max_num;
+    }
+    return prev;
+}
 
 void
 pinit(void)
@@ -46,6 +60,9 @@ allocproc(void)
 
 found:
   p->state = EMBRYO;
+  p->priority=10;
+  if(policy==3)
+    p->nticket=20;
   p->pid = nextpid++;
   release(&ptable.lock);
 
@@ -72,7 +89,59 @@ found:
 
   return p;
 }
+struct sched_policy {
+  char *name;
+  int (*fun)(void);
+};
 
+int policy1(void){
+  struct proc *p;
+  int counter=0;
+  for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+    if(p->state==RUNNABLE){
+      p->nticket=10;
+      counter++;
+    }
+  }
+  int tickets = 10*counter;
+  return tickets;
+  
+}
+int policy2(void){
+  struct proc *p;
+  int sum=0;
+  for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+    if(p->state==RUNNABLE){
+      p->nticket=p->priority;
+      sum=sum+p->priority;
+    }  
+  }
+
+  return sum;
+
+}
+int policy3(void){
+  struct proc *p;
+  int sum=0;
+  for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+    if(p->state==RUNNABLE){
+      p->nticket=20;
+      sum=sum+20;
+    }  
+  }
+
+  return sum;
+}
+struct sched_policy menu[] = {{"Policy1",policy1},{"Policy2",policy2},{"Policy3",policy3},{0,0}};
+
+void priority(int num){
+  proc->priority=num;
+}
+
+int schedp(int shced_policy_id){
+  policy=shced_policy_id;
+  return menu[policy].fun();
+}
 //PAGEBREAK: 32
 // Set up first user process.
 void
@@ -276,10 +345,31 @@ scheduler(void)
 
     // Loop over process table looking for process to run.
     acquire(&ptable.lock);
-    for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+     int tickets=menu[policy].fun();
+     int ticket =rand(tickets);
+     for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+        if(p->state != RUNNABLE)
+          continue;
+        else{
+          ticket=ticket-p->nticket;
+          if(ticket<=0){
+             proc = p;
+            switchuvm(p);
+            p->state = RUNNING;
+            swtch(&cpu->scheduler, proc->context);
+            switchkvm();
+            proc=0;
+            break;
+
+          }
+        }
+    }
+   
+   
+    /*for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
       if(p->state != RUNNABLE)
         continue;
-
+   
       // Switch to chosen process.  It is the process's job
       // to release ptable.lock and then reacquire it
       // before jumping back to us.
@@ -292,7 +382,7 @@ scheduler(void)
       // Process is done running for now.
       // It should have changed its p->state before coming back.
       proc = 0;
-    }
+    }*/
     release(&ptable.lock);
 
   }
@@ -324,6 +414,8 @@ yield(void)
 {
   acquire(&ptable.lock);  //DOC: yieldlock
   proc->state = RUNNABLE;
+  if(policy==3&&proc->nticket>1)
+    proc->nticket-=1;
   sched();
   release(&ptable.lock);
 }
@@ -395,8 +487,11 @@ wakeup1(void *chan)
   struct proc *p;
 
   for(p = ptable.proc; p < &ptable.proc[NPROC]; p++)
-    if(p->state == SLEEPING && p->chan == chan)
+    if(p->state == SLEEPING && p->chan == chan){
       p->state = RUNNABLE;
+      if(policy==3&&p->nticket<=90)
+        p->nticket+=10;
+    }
 }
 
 // Wake up all processes sleeping on chan.
@@ -467,3 +562,4 @@ procdump(void)
     cprintf("\n");
   }
 }
+

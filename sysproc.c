@@ -95,3 +95,18 @@ sys_uptime(void)
   release(&tickslock);
   return xticks;
 }
+
+int sys_priority(void){
+  int num;
+  if(argint(0,&num)<0)
+    return -1;
+  priority(num);
+  return 0;
+}
+
+int sys_schedp(void){
+  int sched_policy_id;
+  if(argint(0,&sched_policy_id)<0)
+    return -1;
+  return schedp(sched_policy_id);
+}
