@@ -129,7 +129,6 @@ int policy3(void){
       sum=sum+20;
     }  
   }
-
   return sum;
 }
 struct sched_policy menu[] = {{"Policy1",policy1},{"Policy2",policy2},{"Policy3",policy3},{0,0}};
@@ -140,7 +139,7 @@ void priority(int num){
 
 int schedp(int shced_policy_id){
   policy=shced_policy_id;
-  return menu[policy].fun();
+  return menu[policy-1].fun();
 }
 //PAGEBREAK: 32
 // Set up first user process.
@@ -345,7 +344,7 @@ scheduler(void)
 
     // Loop over process table looking for process to run.
     acquire(&ptable.lock);
-     int tickets=menu[policy].fun();
+     int tickets=menu[policy-1].fun();
      int ticket =rand(tickets);
      for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
         if(p->state != RUNNABLE)
