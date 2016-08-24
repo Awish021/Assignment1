@@ -50,6 +50,7 @@ struct context {
 };
 
 enum procstate { UNUSED, EMBRYO, SLEEPING, RUNNABLE, RUNNING, ZOMBIE };
+void update_ticks(uint ticks);
 
 // Per-process state
 struct proc {
@@ -67,10 +68,16 @@ struct proc {
   struct inode *cwd;           // Current directory
   char name[16];               // Process name (debugging)
   int status;		       // exit status  	
-  unsigned long nticket;
+  int nticket;
   int priority;
+  int ttime;
+  int ctime;
+  int stime;
+  int retime;
+  int rutime;
 };
-
+void update_ctime(struct proc* p);
+void update_ttime(struct proc* p);
 // Process memory is laid out contiguously, low addresses first:
 //   text
 //   original data and bss

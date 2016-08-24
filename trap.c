@@ -52,6 +52,7 @@ trap(struct trapframe *tf)
       acquire(&tickslock);
       ticks++;
       wakeup(&ticks);
+      update_ticks(ticks);
       release(&tickslock);
     }
     lapiceoi();
@@ -108,4 +109,14 @@ trap(struct trapframe *tf)
   // Check if the process has been killed since we yielded
   if(proc && proc->killed && (tf->cs&3) == DPL_USER)
     exit(0);
+}
+void update_ctime(struct proc* p){
+  acquire(&tickslock);
+  p->ctime=ticks;
+  release(&tickslock);
+}
+void update_ttime(struct proc* p){
+  acquire(&tickslock);
+  p->ttime=ticks;
+  release(&tickslock);
 }

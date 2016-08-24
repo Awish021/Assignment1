@@ -227,6 +227,10 @@ fork(void)
   pid = np->pid;
 
   // lock to force the compiler to emit the np->state write last.
+  update_ctime(np);
+  np->stime=0;
+  np->retime=0;
+  np->rutime=0;
   acquire(&ptable.lock);
   np->state = RUNNABLE;
   release(&ptable.lock);
@@ -276,6 +280,7 @@ void exit(int status)
   // Jump into the scheduler, never to return.
   proc->state = ZOMBIE;
   proc->status = status;
+  update_ttime(proc);
   sched();
   panic("zombie exit");
 }
@@ -288,7 +293,7 @@ wait(int *status)
   struct proc *p;
   int havekids, pid;
 
-  acquire(&ptable.lock);
+  acquire(&ptable.lock);ticks++;
   for(;;){
     // Scan through table looking for zombie children.
     havekids = 0;
@@ -560,5 +565,22 @@ procdump(void)
     }
     cprintf("\n");
   }
+}
+void update_ticks(uint ticks)
+{
+  struct proc* p;
+  acquire(&ptable.lock);
+  for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+    if(p->state==RUNNING){
+      p->rutime++;
+    }
+    if(p->state==RUNNABLE){
+      p->retime++;
+    }
+    if(p->state==SLEEPING){
+      p->stime++;
+    }
+  }
+  release(&ptable.lock);
 }
 
