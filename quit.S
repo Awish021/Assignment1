@@ -1,15 +1,19 @@
-# Initial process execs /init.
+
 
 #include "syscall.h"
 #include "traps.h"
+.text
 
+.globl quit5
+.globl quit_label_start
 
-# exec(init, argv)
-.globl quit
+quit5:
+	quit_label_start:
+	  movl %eax, %ebx
+	  movl $SYS_exit, %eax
+	  push %ebx
+	  int $T_SYSCALL
+	 .globl quit_label_end
 
-
-quit:
-  movl %eax, %ebx	
-  movl $SYS_exit, %eax
-  push %ebx
-  int $T_SYSCALL
+	 quit_label_end:
+		ret

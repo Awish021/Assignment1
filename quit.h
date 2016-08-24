@@ -1,2 +1,2 @@
-void quit(void);
+void quit5(void);
 void printf(int, char*,...);

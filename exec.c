@@ -6,7 +6,12 @@
 #include "defs.h"
 #include "x86.h"
 #include "elf.h"
-#include "quit.h"
+
+
+extern void quit5(void);
+extern void* quit_label_start;
+extern void* quit_label_end;
+
 
 
 
@@ -15,11 +20,13 @@ exec(char *path, char **argv)
 {
   char *s, *last;
   int i, off;
-  uint argc, sz, sp, ustack[3+MAXARG+1] /*qstack[90]*/;
+  uint argc, sz, sp, ustack[3+MAXARG+1] ;
   struct elfhdr elf;
   struct inode *ip;
   struct proghdr ph;
   pde_t *pgdir, *oldpgdir;
+  int addr;
+  int length = (int) (&quit_label_end) - (int)(&quit_label_start);
 
   begin_op();
   if((ip = namei(path)) == 0){
@@ -62,8 +69,10 @@ exec(char *path, char **argv)
   if((sz = allocuvm(pgdir, sz, sz + 2*PGSIZE)) == 0)
     goto bad;
   clearpteu(pgdir, (char*)(sz - 2*PGSIZE));
-  sp = sz;
-  copyout(pgdir, sp, (void*)quit,10);
+  sp = sz-length;
+  addr = sp;
+
+  copyout(pgdir,sp,&quit_label_start,length);
 
 
   // Push argument strings, prepare rest of stack in ustack.
@@ -76,20 +85,11 @@ exec(char *path, char **argv)
     ustack[3+argc] = sp;
   }
 
-  /*void *q=(void*)quit;
-  if(copyout(pgdir, (uint)&qstack, q, 16) < 0)
-      goto bad;*/
-  uint temp;
-  temp=sp;
-  sp=sp-12;
-  if(copyout(pgdir, sp, (void*)quit, 10) < 0)
-      goto bad;
   ustack[3+argc] = 0;
 
-  ustack[0] = sp/*(uint)&qstack*/;  // fake return PC
-  sp=temp;
+  ustack[0] = addr;  // fake return PC
   ustack[1] = argc;
-  ustack[2] = sp - ((argc+1)*4)-12;  // argv pointer
+  ustack[2] = sp - ((argc+1)*4);  // argv pointer
 
   sp -= (3+argc+1) * 4;
   if(copyout(pgdir, sp, ustack, (3+argc+1)*4) < 0)

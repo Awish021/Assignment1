@@ -25,5 +25,5 @@ else
 {
 printf(1, "FAILED\n");
 }
-exit(0);
+	return 9;
 }
