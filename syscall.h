@@ -22,3 +22,4 @@
 #define SYS_close  21
 #define SYS_priority 22
 #define SYS_schedp 23
+#define SYS_wait_stat 24

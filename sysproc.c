@@ -110,3 +110,13 @@ int sys_schedp(void){
     return -1;
   return schedp(sched_policy_id);
 }
+int sys_wait_stat(void){
+  int* status;
+  struct perf* p;
+  if(argint(0,(int*)&status)<0)
+    return -1;
+  if(argint(1,(int*)&p)<0)
+    return -1;
+  return wait_stat(status,p);
+
+}

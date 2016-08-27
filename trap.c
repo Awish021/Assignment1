@@ -111,12 +111,9 @@ trap(struct trapframe *tf)
     exit(0);
 }
 void update_ctime(struct proc* p){
-  acquire(&tickslock);
   p->ctime=ticks;
-  release(&tickslock);
 }
+
 void update_ttime(struct proc* p){
-  acquire(&tickslock);
   p->ttime=ticks;
-  release(&tickslock);
 }
