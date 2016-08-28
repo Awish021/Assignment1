@@ -49,7 +49,6 @@ main(int argc, char *argv[])
 	int* status=0;
 	for(i=0;i<10;i++){
 		pid =fork();
-		
 		if(pid==0)
 			timeConsuming();
 
@@ -57,7 +56,6 @@ main(int argc, char *argv[])
 	/*creating 10 proccesses of Blocking only*/
 	for(i=0;i<10;i++){
 		pid =fork();
-		
 		if(pid==0)
 			blockOnly();
 
@@ -65,7 +63,6 @@ main(int argc, char *argv[])
 	/*creating 10 proccesses of mixed */
 	for(i=0;i<10;i++){
 		pid =fork();
-		
 		if(pid==0)
 			mixed();
 

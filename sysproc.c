@@ -120,3 +120,17 @@ int sys_wait_stat(void){
   return wait_stat(status,p);
 
 }
+int sys_signal(void){
+  int signum;
+  int handler;
+  if(argint(0,&signum)<0||argint(1,&handler)<0)
+    return -1;
+  return (int)signal(signum,(sighandler_t)handler);
+}
+int sys_sigsend(void){
+    int pid;
+    int signum;
+    if(argint(0,&pid)<0||argint(1,&signum)<0)
+       return -1;
+    return sigsend(pid,signum);
+  }

@@ -1,5 +1,7 @@
 // Segments in proc->gdt.
 #define NSEGS     7
+//number of available signals
+#define NUMSIG    32
 
 // Per-CPU state
 struct cpu {
@@ -75,6 +77,9 @@ struct proc {
   int stime;
   int retime;
   int rutime;
+  int pending ;
+  sighandler_t handlers[NUMSIG];
+
 };
 void update_ctime(struct proc* p);
 void update_ttime(struct proc* p);

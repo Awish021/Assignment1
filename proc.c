@@ -35,6 +35,10 @@ int rand(int max_num)
     return prev;
 }
 
+void default_handler(int signal){
+	cprintf("A signal %d was accepted by process %d.",signal,proc->pid);
+}
+
 void
 pinit(void)
 {
@@ -90,6 +94,7 @@ found:
 
   return p;
 }
+
 struct sched_policy {
   char *name;
   int (*fun)(void);
@@ -232,6 +237,13 @@ fork(void)
   np->stime=0;
   np->retime=0;
   np->rutime=0;
+  np->pending=0;
+  int j;
+  for(j=0;j<NUMSIG;j++){
+  	np->handlers[j]=default_handler;
+  }
+
+
   acquire(&ptable.lock);
   np->state = RUNNABLE;
   release(&ptable.lock);
@@ -631,4 +643,24 @@ wait_stat(int *status,struct perf* perf)
     // Wait for children to exit.  (See wakeup1 call in proc_exit.)
     sleep(proc, &ptable.lock);  //DOC: wait-sleep
   }
+}
+sighandler_t signal(int signum, sighandler_t handler){
+	if(signum<0||signum>NUMSIG)
+		return (sighandler_t)-1;
+	sighandler_t temp = proc->handlers[signum];
+	proc->handlers[signum]=handler;
+	return temp;
+}
+
+int sigsend(int pid,int signum){
+	struct proc* p;
+	for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+		if(p->pid==pid){
+			p->pending=p->pending|signum;
+			return 0;
+		}
+	}
+	return -1;
+	
+
 }
