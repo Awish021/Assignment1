@@ -29,6 +29,7 @@ int schedp(int);
 int wait_stat(int*,struct perf*);
 sighandler_t signal(int,sighandler_t);
 int sigsend(int,int);
+int sigreturn(void);
 
 // ulib.c
 int stat(char*, struct stat*);

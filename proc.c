@@ -91,7 +91,15 @@ found:
   p->context = (struct context*)sp;
   memset(p->context, 0, sizeof *p->context);
   p->context->eip = (uint)forkret;
-
+  update_ctime(p);
+  p->stime=0;
+  p->retime=0;
+  p->rutime=0;
+  p->pending=0;
+  int j;
+  for(j=0;j<NUMSIG;j++){
+  	p->handlers[j]=default_handler;
+  }
   return p;
 }
 
@@ -233,15 +241,8 @@ fork(void)
   pid = np->pid;
 
   // lock to force the compiler to emit the np->state write last.
-  update_ctime(np);
-  np->stime=0;
-  np->retime=0;
-  np->rutime=0;
-  np->pending=0;
-  int j;
-  for(j=0;j<NUMSIG;j++){
-  	np->handlers[j]=default_handler;
-  }
+
+  
 
 
   acquire(&ptable.lock);
@@ -579,7 +580,7 @@ procdump(void)
     cprintf("\n");
   }
 }
-void update_ticks(uint ticks)
+void update_ticks()
 {
   struct proc* p;
   acquire(&ptable.lock);
@@ -616,6 +617,8 @@ wait_stat(int *status,struct perf* perf)
         pid = p->pid;
         perf->ctime=p->ctime;
         perf->ttime=p->ttime;
+        int x = p->stime;
+        x+=0;
         perf->stime=p->stime;
         perf->rutime=p->rutime;
         perf->retime=p->retime;
@@ -663,4 +666,7 @@ int sigsend(int pid,int signum){
 	return -1;
 	
 
+}
+int sigreturn(){
+	return 1;
 }

@@ -34,3 +34,4 @@ SYSCALL(schedp)
 SYSCALL(wait_stat)
 SYSCALL(signal)
 SYSCALL(sigsend)
+SYSCALL(sigreturn);

@@ -124,6 +124,7 @@ void            yield(void);
 int             wait_stat(int* status,struct perf* p);
 sighandler_t    signal(int signum, sighandler_t handler);
 int             sigsend(int pid, int signum);
+int 			sigreturn(void);
 
 // swtch.S
 void            swtch(struct context**, struct context*);

@@ -8,7 +8,14 @@ struct perf p;
 
 void timeConsuming(){
 	int init = uptime();
-	while(uptime()<init+30);
+	int curr = init;
+	int counter =0;
+	while(counter<30){
+		if(uptime()!=curr){
+			curr=uptime();
+			counter++;
+		}
+	}
 	exit(0);
 }
 
@@ -22,8 +29,15 @@ void blockOnly(){
 void mixed(){
 	int i;
 	int init = uptime();
+	int curr = init;
+	int counter =0;
 	for(i=0;i<5;i++){
-		while(uptime()<init+5);
+		while(counter<30){
+		if(uptime()!=curr){
+			curr=uptime();
+			counter++;
+		}
+	}
 		sleep(1);
 	}
 	exit(0);
@@ -42,7 +56,7 @@ void printPerf(struct perf p,int pid){
 
 int
 main(int argc, char *argv[])
-{
+{ 
 	printf(1,"Sanity Test ! Calculating results.. please wait..\n\n");
 	/*creating 10 proccesses of CPU only*/
 	int i,pid;
@@ -68,20 +82,24 @@ main(int argc, char *argv[])
 
 	}
 	/* printing results and averages*/
-	int wait=0,turnaround=0,running=0;
+	int wait=0,turnaround=0,running=0,sleep=0;;
 	for(i=0;i<30;i++){
 		printPerf(p,wait_stat(status,&p));
 		wait+=p.retime;
 		turnaround+=(p.ttime-p.ctime);
 		running+=p.rutime;
+		sleep+=p.stime;
 	}
 	wait=wait/30;
 	turnaround=turnaround/30;
 	running=running/30;
+	sleep=sleep/30;
 	printf(1,"The avrages are: \n" );
 	printf(2,"waiting time: %d\n",wait);
 	printf(2,"turnaround time: %d\n",turnaround);
 	printf(2,"running time: %d\n",running);
+	printf(2,"sleeping time: %d\n",sleep);
+
 
 
 

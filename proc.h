@@ -52,7 +52,7 @@ struct context {
 };
 
 enum procstate { UNUSED, EMBRYO, SLEEPING, RUNNABLE, RUNNING, ZOMBIE };
-void update_ticks(uint ticks);
+void update_ticks();
 
 // Per-process state
 struct proc {
