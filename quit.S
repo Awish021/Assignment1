@@ -12,6 +12,7 @@ quit5:
 	  movl %eax, %ebx
 	  movl $SYS_exit, %eax
 	  push %ebx
+	  push %ebx
 	  int $T_SYSCALL
 	 .globl quit_label_end
 
