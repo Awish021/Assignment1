@@ -8,6 +8,10 @@
 #include "spinlock.h"
 #include "perf.h"
 
+void default_handler(int signal){
+  cprintf("A signal %d was accepted by process %d.",signal,proc->pid);
+}
+
 struct {
   struct spinlock lock;
   struct proc proc[NPROC];
@@ -35,9 +39,7 @@ int rand(int max_num)
     return prev;
 }
 
-void default_handler(int signal){
-	cprintf("A signal %d was accepted by process %d.",signal,proc->pid);
-}
+
 
 void
 pinit(void)
@@ -91,6 +93,7 @@ found:
   p->context = (struct context*)sp;
   memset(p->context, 0, sizeof *p->context);
   p->context->eip = (uint)forkret;
+  p->busy=0;
   update_ctime(p);
   p->stime=0;
   p->retime=0;
@@ -260,7 +263,6 @@ void exit(int status)
 {
   struct proc *p;
   int fd;
-
   if(proc == initproc)
     panic("init exiting");
 
@@ -657,16 +659,28 @@ sighandler_t signal(int signum, sighandler_t handler){
 
 int sigsend(int pid,int signum){
 	struct proc* p;
+  acquire(&ptable.lock);
 	for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
 		if(p->pid==pid){
-			p->pending=p->pending|signum;
+      int bit =  0x00000001<<signum;
+			p->pending=p->pending|bit;
+      release(&ptable.lock);
 			return 0;
 		}
 	}
+  release(&ptable.lock);
 	return -1;
 	
 
 }
 int sigreturn(){
-	return 1;
+	acquire(&ptable.lock);
+  if (&(proc->btf) != 0){
+    proc->busy = 0;
+    memmove(proc->tf,&(proc->btf),sizeof(struct trapframe)); 
+    release(&ptable.lock);
+    return 0;
+    }
+  release(&ptable.lock);
+return -1;
 }

@@ -8,12 +8,21 @@
 #include "traps.h"
 #include "spinlock.h"
 
+
 // Interrupt descriptor table (shared by all CPUs).
 struct gatedesc idt[256];
 extern uint vectors[];  // in vectors.S: array of 256 entry pointers
 extern void update_ticks(void);
 struct spinlock tickslock;
 uint ticks;
+
+extern void* sig_label_start;
+extern void* sig_label_end;
+
+#define IS_SIG_ON(p,signum) (p->pending & (1<<signum))
+#define TURN_ON(p,signum) p->pending |= (1<<signum)
+#define TURN_OFF(p,signum) p->pending &= (~(1<<signum))
+
 
 void
 tvinit(void)
@@ -118,3 +127,113 @@ void update_ctime(struct proc* p){
 void update_ttime(struct proc* p){
   p->ttime=ticks;
 }
+
+int bitXor(int x, int y) 
+{
+    int a = x & y;
+    int b = ~x & ~y;
+    int z = ~a & ~b;
+    return z;
+}
+void do_signal(){
+  if(proc==0||proc->busy==1)
+      return;
+  if((proc->tf->cs&3)==3){
+
+    if(proc->pending!=0){
+      memmove(&(proc->btf), proc->tf, sizeof(struct trapframe)); /* copy the tf to new backup*/
+      int temp = proc->pending,counter;
+      for(counter=0;counter<32;counter++){
+        int bit =  0x00000001;
+        bit=(bit<<counter);
+        if((temp&bit)!=0){ /*hit */
+         
+          proc->pending=bitXor(bit,proc->pending);
+         
+          int size=(int)(&sig_label_end)-(int)(&sig_label_start);
+          proc->busy=1;
+          proc->tf->esp-=size;
+          uint sp=proc->tf->esp;
+          copyout(proc->pgdir,proc->tf->esp,&sig_label_start,size);
+
+          proc->tf->eip=(uint)proc->handlers[counter];
+
+          proc->tf->esp -= 4;
+          *((int*) proc->tf->esp) = counter;
+          proc->tf->esp -= 4;
+          *((int*) proc->tf->esp) = sp;
+
+          break;
+        }
+
+
+      }
+    }
+  }
+}
+void handleSignals(){
+  if (proc == 0)
+    return;
+  if (proc->busy == 1)
+    return;
+  if (!(proc->pending == 0)){
+    int i;
+    for (i=0; i < NUMSIG; i++){
+      if ((proc->pending & (int)(0x01 << i)) != 0){ //CHECKING FOR SIGNAL[i] = 1
+        acquire(&ptable.lock);
+        memmove(&(proc->btf), proc->tf, sizeof(struct trapframe)); //SAVE TRAPFRAME
+
+        proc->pending &= ~(int)(0x01 << i); //RESET SIGNAL
+
+        int sigreturnSize;
+        uint sp;
+
+        proc->busy = 1;
+        //PUT SYSTEMCALL SIGRETURN FUNCTION INTO SP
+        sigreturnSize = sig_label_end- sig_label_start;
+        proc->tf->esp -= sigreturnSize;
+        sp = proc->tf->esp;
+        copyout(proc->pgdir,proc->tf->esp,sig_label_start,sigreturnSize);
+
+        proc->tf->eip = (uint)(proc->handlers[i]);//PC = SIGNAL HANDLER
+        cprintf("this is sp: %x\n",sp);
+        cprintf("this is (uint)proc->signalTable[i]: %x\n",(uint)(proc->handlers[i]));
+        cprintf("this is sigreturn: %x\n",sigreturn);
+        cprintf("this is default: %p\n",default_handler);
+        cprintf("this is pointer: %p\n",(uint)(proc->handlers[i]));
+        //ARGUMENT + RET TO SYSCALL
+        proc->tf->esp -= 4;
+        *((int*) proc->tf->esp) = i;
+        proc->tf->esp -= 4;
+        *((int*) proc->tf->esp) = sp;
+
+        break;
+      }
+    }
+  }
+  release(&ptable.lock);
+}
+/*void handleSignals1(){
+  if(proc == 0)  //scheduler
+    return;
+  if(proc->pending == 0) // no signals
+    return;
+  int i;
+    for(i=0; i<NUMSIG; i++){
+      if(IS_SIG_ON(proc,i)){
+        //backup the trapframe
+      memmove(proc->tfbackup,&tf,sizeof(struct trapframe));
+      TURN_OFF(proc,i);
+        tf->eip = (uint)(proc->sig_table[i]);
+        int length = (int)(&inject_sigreturn_end) - (int)(&sig_label_start);
+        tf->esp = (tf->esp - length);
+        uint ret_address = tf->esp;
+        copyout(proc->pgdir, tf->esp, &sig_label_start, length);       
+
+          tf->esp -= 4;
+          *((uint*)tf->esp) = i;
+          tf->esp -= 4;
+          *((uint*)tf->esp) = ret_address;
+
+break; 
+}*/

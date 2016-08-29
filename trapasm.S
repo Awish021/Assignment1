@@ -23,9 +23,14 @@ alltraps:
   call trap
   addl $4, %esp
 
+  call handleSignals 
   # Return falls through to trapret...
 .globl trapret
 trapret:
+#Call do_signal(tf), where tf=%esp
+
+
+
   popal
   popl %gs
   popl %fs

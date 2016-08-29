@@ -28,6 +28,7 @@ OBJS = \
 	vectors.o\
 	vm.o\
 	quit.o\
+	sigreturn.o
 
 
 # Cross-compiling (e.g., on Mac OS X)
@@ -117,7 +118,12 @@ quit: quit.S
 	$(CC) $(CFLAGS) -nostdinc -I. -c quit.S
 	$(LD) $(LDFLAGS) -N -e start -Ttext 0 -o quit.out quit.o
 	$(OBJCOPY) -S -O binary quit.out quit
-	$(OBJDUMP) -S quit.o > quit.asm	
+	$(OBJDUMP) -S quit.o > quit.asm
+sigreturn: sigreturn.S
+	$(CC) $(CFLAGS) -nostdinc -I. -c sigreturn.S
+	$(LD) $(LDFLAGS) -N -e start -Ttext 0 -o sigreturn.out sigreturn.o
+	$(OBJCOPY) -S -O binary sigreturn.out sigreturn
+	$(OBJDUMP) -S sigreturn.o > sigreturn.asm		
 
 kernel: $(OBJS) entry.o entryother initcode kernel.ld
 	$(LD) $(LDFLAGS) -T kernel.ld -o kernel entry.o $(OBJS) -b binary initcode entryother
@@ -182,6 +188,7 @@ UPROGS = \
 	_test\
 	_policy\
 	_sanity\
+	_sigtest\
 
 fs.img: mkfs README $(UPROGS)
 	./mkfs fs.img README $(UPROGS)
@@ -249,7 +256,7 @@ qemu-nox-gdb: fs.img xv6.img .gdbinit
 # check in that version.
 
 EXTRA=\
-	mkfs.c ulib.c user.h cat.c echo.c forktest.c grep.c kill.c  sanity.c \
+	mkfs.c ulib.c user.h cat.c echo.c forktest.c grep.c kill.c   \
 	ln.c ls.c mkdir.c rm.c stressfs.c test.c  usertests.c wc.c zombie.c\
 	printf.c umalloc.c policy.c\
 	README dot-bochsrc *.pl toc.* runoff runoff1 runoff.list\
