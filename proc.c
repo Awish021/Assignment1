@@ -8,9 +8,8 @@
 #include "spinlock.h"
 #include "perf.h"
 
-void default_handler(int signal){
-  cprintf("A signal %d was accepted by process %d.",signal,proc->pid);
-}
+
+extern void defSig(int signal);
 
 struct {
   struct spinlock lock;
@@ -101,7 +100,7 @@ found:
   p->pending=0;
   int j;
   for(j=0;j<NUMSIG;j++){
-  	p->handlers[j]=default_handler;
+  	p->handlers[j]=defSig;
   }
   return p;
 }

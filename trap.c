@@ -13,6 +13,7 @@
 struct gatedesc idt[256];
 extern uint vectors[];  // in vectors.S: array of 256 entry pointers
 extern void update_ticks(void);
+extern void defSig(int signal);
 struct spinlock tickslock;
 uint ticks;
 
@@ -180,26 +181,25 @@ void handleSignals(){
     int i;
     for (i=0; i < NUMSIG; i++){
       if ((proc->pending & (int)(0x01 << i)) != 0){ //CHECKING FOR SIGNAL[i] = 1
-        acquire(&ptable.lock);
         memmove(&(proc->btf), proc->tf, sizeof(struct trapframe)); //SAVE TRAPFRAME
 
         proc->pending &= ~(int)(0x01 << i); //RESET SIGNAL
-
+        proc->tf->eip = (uint)(proc->handlers[i]);//PC = SIGNAL HANDLER
         int sigreturnSize;
         uint sp;
 
         proc->busy = 1;
         //PUT SYSTEMCALL SIGRETURN FUNCTION INTO SP
-        sigreturnSize = sig_label_end- sig_label_start;
+        sigreturnSize = (int)(&sig_label_end)-(int)(&sig_label_start);
         proc->tf->esp -= sigreturnSize;
         sp = proc->tf->esp;
-        copyout(proc->pgdir,proc->tf->esp,sig_label_start,sigreturnSize);
+        copyout(proc->pgdir,proc->tf->esp,&sig_label_start,sigreturnSize);
 
-        proc->tf->eip = (uint)(proc->handlers[i]);//PC = SIGNAL HANDLER
+        
         cprintf("this is sp: %x\n",sp);
         cprintf("this is (uint)proc->signalTable[i]: %x\n",(uint)(proc->handlers[i]));
         cprintf("this is sigreturn: %x\n",sigreturn);
-        cprintf("this is default: %p\n",default_handler);
+        cprintf("this is default: %p\n",defSig);
         cprintf("this is pointer: %p\n",(uint)(proc->handlers[i]));
         //ARGUMENT + RET TO SYSCALL
         proc->tf->esp -= 4;
@@ -211,29 +211,39 @@ void handleSignals(){
       }
     }
   }
-  release(&ptable.lock);
 }
-/*void handleSignals1(){
+void signal1(struct trapframe *tf){    
   if(proc == 0)  //scheduler
-    return;
-  if(proc->pending == 0) // no signals
-    return;
+		return;
+	if(proc->pending == 0) // no signals
+		return;
+	
+  cprintf("apply_sig_handler: proc->pid = %d\n", proc->pid);  //debug print
+  cprintf("   tf==proc->tf?   %d\n", proc->tf==tf);           //debug print
+
+
   int i;
-    for(i=0; i<NUMSIG; i++){
-      if(IS_SIG_ON(proc,i)){
-        //backup the trapframe
-      memmove(proc->tfbackup,&tf,sizeof(struct trapframe));
-      TURN_OFF(proc,i);
-        tf->eip = (uint)(proc->sig_table[i]);
-        int length = (int)(&inject_sigreturn_end) - (int)(&sig_label_start);
-        tf->esp = (tf->esp - length);
-        uint ret_address = tf->esp;
-        copyout(proc->pgdir, tf->esp, &sig_label_start, length);       
+	for(i=0; i<NUMSIG; i++){
+  	if(IS_SIG_ON(proc,i)){
+    	//backup the trapframe
+      uint sp = proc->tf->esp;
+  		memmove(proc->btf,&tf,sizeof(struct trapframe));
+  		TURN_OFF(proc,i);
+    	tf->eip = (uint)(proc->handlers[i]);
+  		int length = (int)(&sig_label_end) - (int)(&sig_label_start);
 
-          tf->esp -= 4;
-          *((uint*)tf->esp) = i;
-          tf->esp -= 4;
-          *((uint*)tf->esp) = ret_address;
+  		sp -= length;
+  		uint ret_address = sp;
+  		copyout(proc->pgdir, sp, &sig_label_start, length);      	
 
-break; 
-}*/
+    	sp -= 4;
+    	*((uint*)sp) = i;
+    	sp -= 4;
+    	*((uint*)sp) = ret_address;
+
+      proc->tf->esp = sp;
+    	break;
+    }
+  }
+  cprintf("apply_sig_handler - end\n");  //debug print
+}

@@ -28,7 +28,8 @@ OBJS = \
 	vectors.o\
 	vm.o\
 	quit.o\
-	sigreturn.o
+	sigreturn.o\
+	defsig.o\
 
 
 # Cross-compiling (e.g., on Mac OS X)

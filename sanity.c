@@ -100,9 +100,6 @@ main(int argc, char *argv[])
 	printf(2,"running time: %d\n",running);
 	printf(2,"sleeping time: %d\n",sleep);
 
-
-
-
-
+	return 1;
 }
 
