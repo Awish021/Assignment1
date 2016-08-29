@@ -140,7 +140,8 @@ void handleSignals(struct trapframe* tf){
   int num;
   if((tf->cs&3)==DPL_USER&&proc&&proc->pending&&!proc->busy){
     proc->busy=1;
-    for(int i=0;i<NUMSIG;i++){
+    int i;
+    for(i=0;i<NUMSIG;i++){
       if(proc->pending&(1<<i)){
         num=i;
         proc->pending=proc->pending&~(1<<i);
