@@ -30,6 +30,7 @@ int main(int argc, char *argv[]){
       sigsend(pid, 2);
       sigsend(pid, 3);
       sigsend(pid,6);
+      sigsend(getpid(),1);
       exit(0);
     }
     wait(0);

@@ -152,7 +152,6 @@ void handleSignals(struct trapframe* tf){
     *((int*) tf->esp) = num;
     tf->esp-=4;
     *((int*) tf->esp) = (int)(proc->srptr);
-    cprintf("the pid that going to do the signal : %d\n", proc->pid);
     if(proc->handlers[num]){
      /* cprintf("the address of the handler is %x\n",(uint)(proc->handlers[num]));
       cprintf("ESP: %x\n",tf->esp);
