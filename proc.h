@@ -63,7 +63,7 @@ struct proc {
   int pid;                     // Process ID
   struct proc *parent;         // Parent process
   struct trapframe *tf;        // Trap frame for current syscall
-  struct trapframe *btf;        // Backup Trap frame for current sighandler
+  struct trapframe* btf;        // Backup Trap frame for current sighandler
   struct context *context;     // swtch() here to run process
   void *chan;                  // If non-zero, sleeping on chan
   int killed;                  // If non-zero, have been killed
@@ -81,6 +81,7 @@ struct proc {
   int pending ;
   int busy;
   sighandler_t handlers[NUMSIG];
+  uint srptr; /*sig return ptr*/
 
 };
 void update_ctime(struct proc* p);

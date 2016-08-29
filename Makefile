@@ -29,7 +29,6 @@ OBJS = \
 	vm.o\
 	quit.o\
 	sigreturn.o\
-	defsig.o\
 
 
 # Cross-compiling (e.g., on Mac OS X)

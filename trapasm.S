@@ -29,7 +29,7 @@ trapret:
 #Call do_signal(tf), where tf=%esp
 
 pushl %esp
-  call signal1
+  call handleSignals
   addl $4, %esp
 
   popal

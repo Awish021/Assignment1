@@ -11,6 +11,8 @@
 extern void quit5(void);
 extern void* quit_label_start;
 extern void* quit_label_end;
+extern void* sig_label_start;
+extern void* sig_label_end;
 
 
 
@@ -27,6 +29,7 @@ exec(char *path, char **argv)
   pde_t *pgdir, *oldpgdir;
   int addr;
   int length = (int) (&quit_label_end) - (int)(&quit_label_start);
+  int sigretlength=(int)(&sig_label_end) - (int)(&sig_label_start);
 
   begin_op();
   if((ip = namei(path)) == 0){
@@ -73,6 +76,10 @@ exec(char *path, char **argv)
   addr = sp;
 
   copyout(pgdir,sp,&quit_label_start,length);
+  sp=sp-sigretlength;
+  proc->srptr=sp;
+
+  copyout(pgdir,sp,&sig_label_start,sigretlength);
 
 
   // Push argument strings, prepare rest of stack in ustack.

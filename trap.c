@@ -136,114 +136,32 @@ int bitXor(int x, int y)
     int z = ~a & ~b;
     return z;
 }
-void do_signal(){
-  if(proc==0||proc->busy==1)
-      return;
-  if((proc->tf->cs&3)==3){
-
-    if(proc->pending!=0){
-      memmove(&(proc->btf), proc->tf, sizeof(struct trapframe)); /* copy the tf to new backup*/
-      int temp = proc->pending,counter;
-      for(counter=0;counter<32;counter++){
-        int bit =  0x00000001;
-        bit=(bit<<counter);
-        if((temp&bit)!=0){ /*hit */
-         
-          proc->pending=bitXor(bit,proc->pending);
-         
-          int size=(int)(&sig_label_end)-(int)(&sig_label_start);
-          proc->busy=1;
-          proc->tf->esp-=size;
-          uint sp=proc->tf->esp;
-          copyout(proc->pgdir,proc->tf->esp,&sig_label_start,size);
-
-          proc->tf->eip=(uint)proc->handlers[counter];
-
-          proc->tf->esp -= 4;
-          *((int*) proc->tf->esp) = counter;
-          proc->tf->esp -= 4;
-          *((int*) proc->tf->esp) = sp;
-
-          break;
-        }
-
-
-      }
-    }
-  }
-}
-void handleSignals(){
-  if (proc == 0)
-    return;
-  if (proc->busy == 1)
-    return;
-  if (!(proc->pending == 0)){
-    int i;
-    for (i=0; i < NUMSIG; i++){
-      if ((proc->pending & (int)(0x01 << i)) != 0){ //CHECKING FOR SIGNAL[i] = 1
-        memmove(&(proc->btf), proc->tf, sizeof(struct trapframe)); //SAVE TRAPFRAME
-
-        proc->pending &= ~(int)(0x01 << i); //RESET SIGNAL
-        proc->tf->eip = (uint)(proc->handlers[i]);//PC = SIGNAL HANDLER
-        int sigreturnSize;
-        uint sp;
-
-        proc->busy = 1;
-        //PUT SYSTEMCALL SIGRETURN FUNCTION INTO SP
-        sigreturnSize = (int)(&sig_label_end)-(int)(&sig_label_start);
-        proc->tf->esp -= sigreturnSize;
-        sp = proc->tf->esp;
-        copyout(proc->pgdir,proc->tf->esp,&sig_label_start,sigreturnSize);
-
-        
-        cprintf("this is sp: %x\n",sp);
-        cprintf("this is (uint)proc->signalTable[i]: %x\n",(uint)(proc->handlers[i]));
-        cprintf("this is sigreturn: %x\n",sigreturn);
-        cprintf("this is default: %p\n",defSig);
-        cprintf("this is pointer: %p\n",(uint)(proc->handlers[i]));
-        //ARGUMENT + RET TO SYSCALL
-        proc->tf->esp -= 4;
-        *((int*) proc->tf->esp) = i;
-        proc->tf->esp -= 4;
-        *((int*) proc->tf->esp) = sp;
-
+void handleSignals(struct trapframe* tf){
+  int num;
+  if((tf->cs&3)==DPL_USER&&proc&&proc->pending&&!proc->busy){
+    proc->busy=1;
+    for(int i=0;i<NUMSIG;i++){
+      if(proc->pending&(1<<i)){
+        num=i;
+        proc->pending=proc->pending&~(1<<i);
         break;
       }
     }
-  }
-}
-void signal1(struct trapframe *tf){    
-  if(proc == 0)  //scheduler
-		return;
-	if(proc->pending == 0) // no signals
-		return;
-	
-  cprintf("apply_sig_handler: proc->pid = %d\n", proc->pid);  //debug print
-  cprintf("   tf==proc->tf?   %d\n", proc->tf==tf);           //debug print
-
-
-  int i;
-	for(i=0; i<NUMSIG; i++){
-  	if(IS_SIG_ON(proc,i)){
-    	//backup the trapframe
-      uint sp = proc->tf->esp;
-  		memmove(proc->btf,&tf,sizeof(struct trapframe));
-  		TURN_OFF(proc,i);
-    	tf->eip = (uint)(proc->handlers[i]);
-  		int length = (int)(&sig_label_end) - (int)(&sig_label_start);
-
-  		sp -= length;
-  		uint ret_address = sp;
-  		copyout(proc->pgdir, sp, &sig_label_start, length);      	
-
-    	sp -= 4;
-    	*((uint*)sp) = i;
-    	sp -= 4;
-    	*((uint*)sp) = ret_address;
-
-      proc->tf->esp = sp;
-    	break;
+    *(proc->btf)=*tf;
+    tf->esp-=4;
+    *((int*) tf->esp) = num;
+    tf->esp-=4;
+    *((int*) tf->esp) = (int)(proc->srptr);
+    cprintf("the pid that going to do the signal : %d\n", proc->pid);
+    if(proc->handlers[num]){
+     /* cprintf("the address of the handler is %x\n",(uint)(proc->handlers[num]));
+      cprintf("ESP: %x\n",tf->esp);
+      cprintf("srptr: %x\n",(int)(proc->srptr));*/
+      tf->eip=(uint)(proc->handlers[num]);
+    }
+    else{
+      cprintf("A signal %d was accepted by process %d\n", num, proc->pid);
+      sigreturn();
     }
   }
-  cprintf("apply_sig_handler - end\n");  //debug print
 }

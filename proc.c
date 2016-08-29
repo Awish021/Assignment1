@@ -100,7 +100,7 @@ found:
   p->pending=0;
   int j;
   for(j=0;j<NUMSIG;j++){
-  	p->handlers[j]=defSig;
+  	p->handlers[j]=0;
   }
   return p;
 }
@@ -673,13 +673,15 @@ int sigsend(int pid,int signum){
 
 }
 int sigreturn(){
-	acquire(&ptable.lock);
+  acquire(&ptable.lock);
   if (&(proc->btf) != 0){
     proc->busy = 0;
-    memmove(proc->tf,&(proc->btf),sizeof(struct trapframe)); 
+    /*memmove(proc->tf,&(proc->btf),sizeof(struct trapframe)); */
+    *(proc->tf)=*(proc->btf);
+
     release(&ptable.lock);
     return 0;
     }
-  release(&ptable.lock);
+    release(&ptable.lock);
 return -1;
 }
