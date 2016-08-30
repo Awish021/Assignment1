@@ -2,9 +2,10 @@
 #include "param.h"
 #include "memlayout.h"
 #include "mmu.h"
+#include "x86.h"
 #include "proc.h"
 #include "defs.h"
-#include "x86.h"
+
 #include "elf.h"
 
 
@@ -72,13 +73,13 @@ exec(char *path, char **argv)
   if((sz = allocuvm(pgdir, sz, sz + 2*PGSIZE)) == 0)
     goto bad;
   clearpteu(pgdir, (char*)(sz - 2*PGSIZE));
+
   sp = sz-length;
   addr = sp;
-
   copyout(pgdir,sp,&quit_label_start,length);
+
   sp=sp-sigretlength;
   proc->srptr=sp;
-
   copyout(pgdir,sp,&sig_label_start,sigretlength);
 
 

@@ -100,7 +100,7 @@ found:
   p->pending=0;
   int j;
   for(j=0;j<NUMSIG;j++){
-  	p->handlers[j]=0;
+  	p->handlers[j]=(sighandler_t)0xffffffff;
   }
   return p;
 }
@@ -649,10 +649,11 @@ wait_stat(int *status,struct perf* perf)
   }
 }
 sighandler_t signal(int signum, sighandler_t handler){
-	if(signum<0||signum>NUMSIG)
-		return (sighandler_t)-1;
-	sighandler_t temp = proc->handlers[signum];
+	sighandler_t temp;
+  acquire(&ptable.lock);
+	temp = proc->handlers[signum];
 	proc->handlers[signum]=handler;
+  release(&ptable.lock);
 	return temp;
 }
 
@@ -677,7 +678,7 @@ int sigreturn(){
   if (&(proc->btf) != 0){
     proc->busy = 0;
     /*memmove(proc->tf,&(proc->btf),sizeof(struct trapframe)); */
-    *(proc->tf)=*(proc->btf);
+    *(proc->tf)=proc->btf;
 
     release(&ptable.lock);
     return 0;

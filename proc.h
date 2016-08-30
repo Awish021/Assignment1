@@ -2,7 +2,7 @@
 #define NSEGS     7
 //number of available signals
 #define NUMSIG    32
-
+#include "x86.h"
 // Per-CPU state
 struct cpu {
   uchar id;                    // Local APIC ID; index into cpus[] below
@@ -63,7 +63,7 @@ struct proc {
   int pid;                     // Process ID
   struct proc *parent;         // Parent process
   struct trapframe *tf;        // Trap frame for current syscall
-  struct trapframe* btf;        // Backup Trap frame for current sighandler
+  struct trapframe btf;        // Backup Trap frame for current sighandler
   struct context *context;     // swtch() here to run process
   void *chan;                  // If non-zero, sleeping on chan
   int killed;                  // If non-zero, have been killed

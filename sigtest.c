@@ -3,11 +3,25 @@
 #include "user.h"
 #include "fs.h"
 
-void handler1(int num);
-void handler2(int num);
-void handler3(int num);
 int x=0;
 int y=0;
+void handler0(int num){
+  return;
+}
+void handler1(int num){
+  y++;
+  printf(1,"Process %d recieved signal %d\n",getpid(),num);
+}
+
+void handler2(int num){
+  x++;
+  printf(1,"Process %d recieved signal %d\n",getpid(),num);
+}
+void handler3(int num){
+  printf(1,"Print only, from proccess %d and signal %d\n",getpid(),num );
+}
+
+
 
 int main(int argc, char *argv[]){
 
@@ -44,15 +58,3 @@ int main(int argc, char *argv[]){
   return 1;
 }
 
-void handler1(int num){
-  y++;
-  printf(1,"Process %d recieved signal %d\n",getpid(),num);
-}
-
-void handler2(int num){
-  x++;
-  printf(1,"Process %d recieved signal %d\n",getpid(),num);
-}
-void handler3(int num){
-  printf(1,"Print only, from proccess %d and signal %d\n",getpid(),num );
-}

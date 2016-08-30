@@ -179,6 +179,7 @@ UPROGS = \
 	_kill\
 	_ln\
 	_ls\
+	_sigtest\
 	_mkdir\
 	_rm\
 	_sh\
@@ -188,7 +189,7 @@ UPROGS = \
 	_test\
 	_policy\
 	_sanity\
-	_sigtest\
+
 
 fs.img: mkfs README $(UPROGS)
 	./mkfs fs.img README $(UPROGS)

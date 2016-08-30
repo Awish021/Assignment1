@@ -3,8 +3,8 @@
 #include "param.h"
 #include "memlayout.h"
 #include "mmu.h"
-#include "proc.h"
 #include "x86.h"
+#include "proc.h"
 #include "traps.h"
 #include "spinlock.h"
 
@@ -13,16 +13,11 @@
 struct gatedesc idt[256];
 extern uint vectors[];  // in vectors.S: array of 256 entry pointers
 extern void update_ticks(void);
-extern void defSig(int signal);
 struct spinlock tickslock;
 uint ticks;
 
 extern void* sig_label_start;
 extern void* sig_label_end;
-
-#define IS_SIG_ON(p,signum) (p->pending & (1<<signum))
-#define TURN_ON(p,signum) p->pending |= (1<<signum)
-#define TURN_OFF(p,signum) p->pending &= (~(1<<signum))
 
 
 void
@@ -129,13 +124,6 @@ void update_ttime(struct proc* p){
   p->ttime=ticks;
 }
 
-int bitXor(int x, int y) 
-{
-    int a = x & y;
-    int b = ~x & ~y;
-    int z = ~a & ~b;
-    return z;
-}
 void handleSignals(struct trapframe* tf){
   int num;
   if((tf->cs&3)==DPL_USER&&proc&&proc->pending&&!proc->busy){
@@ -148,20 +136,22 @@ void handleSignals(struct trapframe* tf){
         break;
       }
     }
-    *(proc->btf)=*tf;
+    
+    if(proc->handlers[num]!=(sighandler_t)0xffffffff){
+     /* cprintf("the address of the handler is %x\n",(uint)(proc->handlers[num]));
+      cprintf("ESP: %x\n",tf->esp);
+      cprintf("srptr: %x\n",(int)(proc->srptr));*/
+      proc->btf=*tf;
     tf->esp-=4;
     *((int*) tf->esp) = num;
     tf->esp-=4;
     *((int*) tf->esp) = (int)(proc->srptr);
-    if(proc->handlers[num]){
-     /* cprintf("the address of the handler is %x\n",(uint)(proc->handlers[num]));
-      cprintf("ESP: %x\n",tf->esp);
-      cprintf("srptr: %x\n",(int)(proc->srptr));*/
       tf->eip=(uint)(proc->handlers[num]);
     }
     else{
       cprintf("A signal %d was accepted by process %d\n", num, proc->pid);
-      sigreturn();
+      proc->busy=0;
+      /*sigreturn();*/
     }
   }
 }
