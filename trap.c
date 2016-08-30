@@ -138,9 +138,6 @@ void handleSignals(struct trapframe* tf){
     }
     
     if(proc->handlers[num]!=(sighandler_t)0xffffffff){
-     /* cprintf("the address of the handler is %x\n",(uint)(proc->handlers[num]));
-      cprintf("ESP: %x\n",tf->esp);
-      cprintf("srptr: %x\n",(int)(proc->srptr));*/
       proc->btf=*tf;
     tf->esp-=4;
     *((int*) tf->esp) = num;

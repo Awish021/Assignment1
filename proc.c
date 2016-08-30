@@ -229,6 +229,7 @@ fork(void)
   np->sz = proc->sz;
   np->parent = proc;
   *np->tf = *proc->tf;
+  np->srptr=proc->srptr;
 
   // Clear %eax so that fork returns 0 in the child.
   np->tf->eax = 0;
@@ -649,6 +650,8 @@ wait_stat(int *status,struct perf* perf)
   }
 }
 sighandler_t signal(int signum, sighandler_t handler){
+  if(signum<0||signum>NUMSIG)
+      return (sighandler_t)-1;
 	sighandler_t temp;
   acquire(&ptable.lock);
 	temp = proc->handlers[signum];
