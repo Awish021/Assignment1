@@ -23,7 +23,7 @@ extern void forkret(void);
 extern void trapret(void);
 
 static void wakeup1(void *chan);
-static int policy=1;
+static int policy=2;
 
 
 /*The random mechanism*/
@@ -69,6 +69,8 @@ found:
   p->priority=10;
   if(policy==3)
     p->nticket=20;
+  if(policy==2)
+    p->nticket=10;
   p->pid = nextpid++;
   release(&ptable.lock);
 
@@ -376,7 +378,9 @@ scheduler(void)
     // Loop over process table looking for process to run.
     acquire(&ptable.lock);
      int tickets=getTickets();
+
      int ticket =rand(tickets);
+
      for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
         if(p->state != RUNNABLE)
           continue;
