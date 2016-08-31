@@ -7,6 +7,7 @@
 struct perf p;
 
 void timeConsuming(){
+	priority(1);
 	int init = uptime();
 	int curr = init;
 	int counter =0;
@@ -21,6 +22,7 @@ void timeConsuming(){
 
 void blockOnly(){
 	int i;
+	priority(1000);
 	for(i=0;i<30;i++)
 		sleep(1);
 	exit(0);
@@ -28,6 +30,7 @@ void blockOnly(){
 
 void mixed(){
 	int i;
+	priority(50);
 	int init = uptime();
 	int curr = init;
 	int counter =0;
@@ -64,7 +67,7 @@ main(int argc, char *argv[])
 	for(i=0;i<10;i++){
 		pid =fork();
 		if(pid==0){
-			priority(1);
+
 			timeConsuming();
 		}
 
@@ -73,7 +76,7 @@ main(int argc, char *argv[])
 	for(i=0;i<10;i++){
 		pid =fork();
 		if(pid==0){
-			priority(10);
+			
 			blockOnly();
 		}
 
@@ -82,11 +85,11 @@ main(int argc, char *argv[])
 	for(i=0;i<10;i++){
 		pid =fork();
 		if(pid==0)
-			priority(5);
+			
 			mixed();
-
 	}
 	/* printing results and averages*/
+	sleep(100);
 	int wait=0,turnaround=0,running=0,sleep=0;;
 	for(i=0;i<30;i++){
 		printPerf(p,wait_stat(status,&p));
