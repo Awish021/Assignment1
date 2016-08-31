@@ -114,8 +114,8 @@ int policy1(void){
   struct proc *p;
   int counter=0;
   for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+    p->nticket=10;
     if(p->state==RUNNABLE){
-      p->nticket=10;
       counter++;
     }
   }
@@ -127,8 +127,8 @@ int policy2(void){
   struct proc *p;
   int sum=0;
   for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+    p->nticket=p->priority;
     if(p->state==RUNNABLE){
-      p->nticket=p->priority;
       sum=sum+p->priority;
     }  
   }
@@ -140,8 +140,8 @@ int policy3(void){
   struct proc *p;
   int sum=0;
   for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+    p->nticket=20;
     if(p->state==RUNNABLE){
-      p->nticket=20;
       sum=sum+20;
     }  
   }
@@ -354,6 +354,16 @@ wait(int *status)
 //  - swtch to start running that process
 //  - eventually that process transfers control
 //      via swtch back to the scheduler.
+int getTickets(){
+  int sum=0;
+   struct proc *p;
+  for(p = ptable.proc; p < &ptable.proc[NPROC]; p++)
+        if(p->state == RUNNABLE)
+          sum+=p->nticket;
+  return sum;
+
+}
+
 void
 scheduler(void)
 {
@@ -365,7 +375,7 @@ scheduler(void)
 
     // Loop over process table looking for process to run.
     acquire(&ptable.lock);
-     int tickets=menu[policy-1].fun();
+     int tickets=getTickets();
      int ticket =rand(tickets);
      for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
         if(p->state != RUNNABLE)
