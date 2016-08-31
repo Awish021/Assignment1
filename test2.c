@@ -89,7 +89,6 @@ main(int argc, char *argv[])
 			mixed();
 	}
 	/* printing results and averages*/
-	sleep(100);
 	int wait=0,turnaround=0,running=0,sleep=0;;
 	for(i=0;i<30;i++){
 		printPerf(p,wait_stat(status,&p));

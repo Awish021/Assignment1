@@ -81,7 +81,6 @@ main(int argc, char *argv[])
 			mixed();
 
 	}
-	sleep(10);
 	/* printing results and averages*/
 	int wait=0,turnaround=0,running=0,sleep=0;;
 	for(i=0;i<30;i++){
