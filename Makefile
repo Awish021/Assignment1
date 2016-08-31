@@ -190,6 +190,7 @@ UPROGS = \
 	_policy\
 	_sanity\
 	_vtest\
+	_test2\
 
 
 fs.img: mkfs README $(UPROGS)

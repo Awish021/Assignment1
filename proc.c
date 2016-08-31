@@ -102,7 +102,7 @@ found:
   p->pending=0;
   int j;
   for(j=0;j<NUMSIG;j++){
-  	p->handlers[j]=(sighandler_t)0xffffffff;
+    p->handlers[j]=(sighandler_t)0xffffffff;
   }
   return p;
 }
@@ -412,7 +412,6 @@ scheduler(void)
       p->state = RUNNING;
       swtch(&cpu->scheduler, proc->context);
       switchkvm();
-
       // Process is done running for now.
       // It should have changed its p->state before coming back.
       proc = 0;
@@ -666,28 +665,28 @@ wait_stat(int *status,struct perf* perf)
 sighandler_t signal(int signum, sighandler_t handler){
   if(signum<0||signum>NUMSIG)
       return (sighandler_t)-1;
-	sighandler_t temp;
+  sighandler_t temp;
   acquire(&ptable.lock);
-	temp = proc->handlers[signum];
-	proc->handlers[signum]=handler;
+  temp = proc->handlers[signum];
+  proc->handlers[signum]=handler;
   release(&ptable.lock);
-	return temp;
+  return temp;
 }
 
 int sigsend(int pid,int signum){
-	struct proc* p;
+  struct proc* p;
   acquire(&ptable.lock);
-	for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
-		if(p->pid==pid){
+  for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+    if(p->pid==pid){
       int bit =  0x00000001<<signum;
-			p->pending=p->pending|bit;
+      p->pending=p->pending|bit;
       release(&ptable.lock);
-			return 0;
-		}
-	}
+      return 0;
+    }
+  }
   release(&ptable.lock);
-	return -1;
-	
+  return -1;
+  
 
 }
 int sigreturn(){
